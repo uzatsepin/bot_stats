@@ -52,7 +52,7 @@ const bootstrap = async () => {
       console.log('Инициализация задания сохранения статистики');
       
       const client = await initTelegramClient()
-      cron.schedule('* 0 * * *', async () => {
+      cron.schedule('0 * * * *', async () => {
         try {
           await saveDailyStats(client, channelUsername)
           console.log('Статистика успешно сохранена')
