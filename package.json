@@ -1,0 +1,27 @@
+{
+  "name": "tg-stat",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Telegram bot for statistics",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "@grammyjs/storage-file": "^2.4.2",
+    "@grammyjs/types": "^3.18.0",
+    "@inquirer/prompts": "^7.3.1",
+    "hono": "^4.6.20",
+    "input": "^1.0.1",
+    "node-cron": "^3.0.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "telegram": "^2.26.16"
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610",
+  "devDependencies": {
+    "@hono/node-server": "^1.13.8",
+    "dotenv": "^16.4.7",
+    "nodemon": "^3.1.9"
+  }
+}
