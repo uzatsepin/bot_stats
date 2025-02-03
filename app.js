@@ -6,7 +6,6 @@ import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import { cors } from 'hono/cors'
 import { initTelegramClient } from './config/telegram.js'
-import { getChannelStats } from './routes/channelStats.js'
 import { getPostStats } from './routes/getPostData.js'
 import { getFullStats } from './routes/getFullStats.js'
 import { init } from './database/config.js'
@@ -35,9 +34,8 @@ app.get('/', (c) => {
   })
 })
 
-app.get('/channel/:username/stats', getChannelStats)
 app.get('/channel/:username/post/:postId/stats', getPostStats)
-app.get('/channel/:username/full', getFullStats)
+app.get('/channel/:username/stats', getFullStats)
 app.get('/channel/:username/report', getDailyComparison)
 
 const port = process.env.PORT || 3000
