@@ -12,31 +12,24 @@ export async function getDetailedStats(c) {
     }
 
     // Получаем последние 100 сообщений для анализа
-    const messages = await client.getMessages(channel, { limit: 50 });
+    const messages = await client.getMessages(channel, { limit: 10 });
 
     // Подсчет пересланных сообщений
     const forwardedCount = messages.filter(msg => msg.forwards).reduce((sum, msg) => sum + msg.forwards, 0);
+
+    console.log(messages);
+    
 
     // Подсчет кликов по ссылкам (если доступно)
     const linkClicks = messages
       .filter(msg => msg.views && msg.media?.webpage)
       .reduce((sum, msg) => sum + (msg.views || 0), 0);
 
-      const now = new Date();
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(now.getMonth() - 1);
-
     // Формируем результат
     const result = {
       // Статистика сообщений
       forwarded_messages: forwardedCount,
       link_clicks: linkClicks,
-      
-      // Период статистики
-      period: {
-        start_date: oneMonthAgo.toISOString(),
-        end_date: now.toISOString()
-      }
     };
 
     return c.json(result);
