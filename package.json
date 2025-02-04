@@ -8,9 +8,6 @@
     "dev": "node --watch app.js"
   },
   "dependencies": {
-    "@grammyjs/storage-file": "^2.4.2",
-    "@grammyjs/types": "^3.18.0",
-    "@inquirer/prompts": "^7.3.1",
     "hono": "^4.6.20",
     "input": "^1.0.1",
     "node-cron": "^3.0.3",
