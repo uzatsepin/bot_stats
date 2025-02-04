@@ -29,7 +29,7 @@ export async function getPopularPosts(c) {
           };
         });
     
-      return c.json({ popular_posts: popularPosts });
+      return c.json(popularPosts);
     } catch (error) {
       console.error('Ошибка при получении популярных постов:', error);
       return c.json({ 
