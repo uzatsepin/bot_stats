@@ -34,17 +34,6 @@ export async function getFullStats(c) {
       dailyActivity[date] = (dailyActivity[date] || 0) + 1
     })
 
-    // Определяем топ-3 сообщения по количеству просмотров
-    const top_messages = messages
-      .filter(msg => msg.views != null)
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 3)
-      .map(msg => ({
-        id: msg.id,
-        views: msg.views,
-        date: msg.date
-      }))
-
     // Охват и взаимодействие – можно оценить как среднее число просмотров за сообщение
     const reach = messages.length ? (total_views / messages.length).toFixed(2) : 0
 
@@ -52,7 +41,6 @@ export async function getFullStats(c) {
     const result = {
       participants_count,
       total_views,
-      top_messages,
       reach: Number(reach),
     }
 
