@@ -1,6 +1,6 @@
 import { openDb } from "../database/db.js";
 
-export async function getDailyComparison(c) {
+export async function getReport(c) {
     const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const db = await openDb();

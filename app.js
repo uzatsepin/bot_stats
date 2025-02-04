@@ -6,11 +6,9 @@ import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import { cors } from "hono/cors";
 import { initTelegramClient } from "./config/telegram.js";
-import { getPostStats } from "./routes/getPostData.js";
-import { getFullStats } from "./routes/getFullStats.js";
-import { getDailyComparison } from "./routes/getDailyComprasion.js";
 import { saveDailyStats } from "./handlers/saveDailyStats.js";
 import { init } from "./database/config.js";
+import { registerRoutes } from "./routes/index.js";
 
 dotenv.config();
 const app = new Hono();
@@ -33,9 +31,7 @@ app.get("/", (c) =>
     })
 );
 
-app.get("/channel/:username/post/:postId/stats", getPostStats);
-app.get("/channel/:username/stats", getFullStats);
-app.get("/channel/:username/report", getDailyComparison);
+registerRoutes(app);
 
 function scheduleCronJobs(client, channelUsername) {
     console.log("Инициализация задания сохранения статистики");
