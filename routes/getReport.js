@@ -5,11 +5,25 @@ export async function getReport(c) {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const db = await openDb();
 
-    const todayData = await db.get(
-		"SELECT * FROM channel_stats WHERE date = ? ORDER BY timestamp DESC LIMIT 1",
-		today
-	  );
-    const yesterdayData = await db.get("SELECT * FROM channel_stats WHERE date = ?", yesterday);
+    const todayData = await db.get(`
+        SELECT * FROM channel_stats 
+        WHERE timestamp = (
+            SELECT MAX(timestamp) 
+            FROM channel_stats 
+            WHERE date = ?
+        )`,
+        today
+    );
+
+    const yesterdayData = await db.get(`
+        SELECT * FROM channel_stats 
+        WHERE timestamp = (
+            SELECT MAX(timestamp) 
+            FROM channel_stats 
+            WHERE date = ?
+        )`,
+        yesterday
+    );
 
     return c.json({
         today: todayData || {},
