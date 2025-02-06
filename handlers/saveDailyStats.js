@@ -6,7 +6,6 @@ export async function saveDailyStats(client, channelUsername) {
   let db
 
   try {
-    // Получаем данные канала
     console.log(`Fetching stats for channel: ${channelUsername}`)
     const channel = await client.getEntity(channelUsername)
     const full = await client.invoke(
@@ -14,50 +13,45 @@ export async function saveDailyStats(client, channelUsername) {
     )
     const subscribers = full.fullChat.participantsCount || 0
 
-    // Получаем сообщения за последние 24 часа
     const now = new Date()
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const yesterday = Math.floor((now.getTime() - 24 * 60 * 60 * 1000) / 1000)
     
-    const messages = await client.getMessages(channel, { 
-      limit: 100,
-      offsetDate: yesterday
-    })
+    const allMessages = await client.getMessages(channel, { limit: 100 })
+    
+    const dailyMessages = allMessages.filter(msg => msg.date >= yesterday)
 
-    if (!messages || messages.length === 0) {
+    if (!dailyMessages || dailyMessages.length === 0) {
       console.log('No messages found in the last 24 hours')
       return
     }
 
-    // Подсчитываем метрики
-    const stats = messages.reduce((acc, msg) => {
-      const views = msg.views || 0
-      const forwards = msg.forwards || 0
-      const replies = msg.replies?.count || 0
-      const reactions = msg.reactions?.results?.reduce((total, reaction) => 
-        total + (reaction.count || 0), 0) || 0
+    const stats = {
+      totalViews: allMessages.reduce((acc, msg) => acc + (msg.views || 0), 0),
+      reach: allMessages.length ? allMessages.reduce((acc, msg) => acc + (msg.views || 0), 0) / allMessages.length : 0,
+      
+      dailyViews: dailyMessages.reduce((acc, msg) => acc + (msg.views || 0), 0),
+      postsCount: dailyMessages.length,
+      interactions: dailyMessages.reduce((acc, msg) => {
+        const forwards = msg.forwards || 0
+        const replies = msg.replies?.count || 0
+        const reactions = msg.reactions?.results?.reduce((total, reaction) => 
+          total + (reaction.count || 0), 0) || 0
+        return acc + forwards + replies + reactions
+      }, 0)
+    }
 
-      return {
-        totalViews: acc.totalViews + views,
-        dailyViews: acc.dailyViews + views,
-        interactions: acc.interactions + forwards + replies + reactions
-      }
-    }, { totalViews: 0, dailyViews: 0, interactions: 0 })
-
-    const reach = messages.length ? stats.totalViews / messages.length : 0
     const engagementRate = stats.dailyViews ? (stats.interactions / stats.dailyViews * 100) : 0
 
-    // Форматируем данные для сохранения
     const data = {
       date: now.toISOString().slice(0, 10),
       subscribers,
       views: stats.totalViews,
-      reach: parseFloat(reach.toFixed(2)),
-      posts_count: messages.length,
+      reach: parseFloat(stats.reach.toFixed(2)),
+      posts_count: stats.postsCount,
       daily_views: stats.dailyViews,
       engagement_rate: parseFloat(engagementRate.toFixed(2))
     }
 
-    // Сохраняем в базу
     db = await openDb()
     await db.run(`
       INSERT OR REPLACE INTO channel_stats (

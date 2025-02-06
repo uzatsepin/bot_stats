@@ -10,19 +10,6 @@ import {
   getWeeklyReport,
   getMonthlyReport 
 } from '../controllers/reports.js';
-import { getPostStats, getPostEngagement } from '../controllers/posts.js';
-import { 
-  getChannelStats, 
-  getChannelEngagement,
-  getChannelGrowth,
-  getChannelHistory
-} from '../controllers/channel.js';
-import { 
-  getDailyReport, 
-  getWeeklyReport,
-  getMonthlyReport 
-} from '../controllers/reports.js';
-
 export function registerRoutes(app) {
   // Post-related routes
   app.get('/channels/:username/posts/:postId', getPostStats);
