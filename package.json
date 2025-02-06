@@ -1,7 +1,7 @@
 {
   "name": "tg-stat",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Telegram bot for statistics",
   "scripts": {
     "start": "node app.js",
@@ -20,5 +20,6 @@
     "@hono/node-server": "^1.13.8",
     "dotenv": "^16.4.7",
     "nodemon": "^3.1.9"
-  }
+  },
+  "license": "MIT"
 }

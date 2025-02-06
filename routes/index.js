@@ -1,15 +1,26 @@
-import { getPostStats } from "./getPostData.js";
-import { getFullStats } from "./getFullStats.js";
-import { getReport } from "./getReport.js";
-import { getDailyReport } from "./getDailyReport.js";
-import { getDetailedStats } from "./getDetailedStats.js";
-import { getPopularPosts } from "./getPopularPosts.js";
+import { getPostStats, getPostEngagement } from '../controllers/posts.js';
+import { 
+  getChannelStats, 
+  getChannelEngagement,
+  getChannelGrowth,
+  getChannelHistory
+} from '../controllers/channel.js';
+import { 
+  getDailyReport, 
+  getWeeklyReport,
+  getMonthlyReport 
+} from '../controllers/reports.js';
 
 export function registerRoutes(app) {
-  app.get("/channel/:username/post/:postId/stats", getPostStats);
-  app.get("/channel/:username/stats", getFullStats);
-  app.get("/channel/:username/report", getReport);
-  app.get("/channel/:username/dailyreport", getDailyReport);
-  app.get("/channel/:username/detailedStats", getDetailedStats);
-  app.get("/channel/:username/popularPosts", getPopularPosts);
+  app.get('/channels/:username/posts/:postId', getPostStats);
+  app.get('/channels/:username/posts/:postId/engagement', getPostEngagement);
+  
+  app.get('/channels/:username/stats', getChannelStats);
+  app.get('/channels/:username/engagement', getChannelEngagement);
+  app.get('/channels/:username/growth', getChannelGrowth);
+  app.get('/channels/:username/history', getChannelHistory);
+  
+  app.get('/channels/:username/reports/daily', getDailyReport);
+  app.get('/channels/:username/reports/weekly', getWeeklyReport);
+  app.get('/channels/:username/reports/monthly', getMonthlyReport);
 }
