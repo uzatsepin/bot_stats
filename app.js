@@ -19,8 +19,11 @@ app.use("*", logger());
 app.use("*", prettyJSON());
 app.use("*", cors());
 
+let db;
+
 app.use("*", async (c, next) => {
     c.set("telegram", telegramClient);
+    c.set("db", db);
     await next();
 });
 
@@ -35,8 +38,11 @@ registerRoutes(app);
 
 function scheduleCronJobs(client, channelUsername) {
     console.log("Инициализация задания сохранения статистики");
-    cron.schedule("0 * * * *", async () => {
+    
+    // Запускаем каждые 6 часов: в 00:00, 06:00, 12:00, 18:00
+    cron.schedule("0 */6 * * *", async () => {
         try {
+            console.log("Начало сбора статистики:", new Date().toISOString());
             await saveDailyStats(client, channelUsername);
             console.log("Статистика успешно сохранена");
         } catch (error) {
@@ -49,12 +55,18 @@ const port = process.env.PORT || 3000;
 
 const bootstrap = async () => {
     try {
+        // Initialize database first
+        db = await init();
+        console.log("Database initialized");
+
+        // Initialize Telegram client
         telegramClient = await initTelegramClient();
         console.log("Telegram client initialized");
-        await init();
 
+        // Schedule cron jobs
         scheduleCronJobs(telegramClient, channelUsername);
 
+        // Start the server
         serve({ fetch: app.fetch, port });
         console.log(`Server is running on port ${port}`);
     } catch (error) {

@@ -2,4 +2,6 @@ node_modules
 .env
 sessions/user.session
 database/stats.db
+database/stats.db-shm
+database/stats.db-wal
 /.idea
