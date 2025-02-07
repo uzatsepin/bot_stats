@@ -14,11 +14,11 @@ export async function saveDailyStats(client, channelUsername) {
     const subscribers = full.fullChat.participantsCount || 0
 
     const now = new Date()
-    const yesterday = Math.floor((now.getTime() - 24 * 60 * 60 * 1000) / 1000)
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000
     
     const allMessages = await client.getMessages(channel, { limit: 100 })
     
-    const dailyMessages = allMessages.filter(msg => msg.date >= yesterday)
+    const dailyMessages = allMessages.filter(msg => msg.date >= startOfDay)
 
     if (!dailyMessages || dailyMessages.length === 0) {
       console.log('No messages found in the last 24 hours')
