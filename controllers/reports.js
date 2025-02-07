@@ -15,7 +15,6 @@ export async function getDailyReport(c) {
     const fullChannel = await getChannelFullInfo(client, channel);
     const messages = await getChannelMessages(client, channel, { limit: 50 });
 
-    // Group messages by day
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
     
@@ -26,6 +25,7 @@ export async function getDailyReport(c) {
 
     const report = {
       date: todayStr,
+      participant_count: fullChannel.fullChat.participantsCount || 0,
       total_posts: todayMessages.length,
       ...calculateEngagementMetrics(todayMessages, fullChannel.fullChat.participantsCount),
       posts: todayMessages.map(msg => ({

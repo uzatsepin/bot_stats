@@ -96,8 +96,8 @@ export async function getChannelHistory(c) {
     const period = c.req.query('period') || '7d';
     const db = c.get('db');
 
-    // Проверка корректности периода
-    const validPeriods = ['24h', '1d', '7d', '14d', '30d', 'all'];
+    // Validate period
+    const validPeriods = ['1d', '7d', '14d', '30d', 'all'];
     if (!validPeriods.includes(period)) {
       return c.json({
         success: false,
@@ -107,96 +107,106 @@ export async function getChannelHistory(c) {
 
     let rows;
     try {
-      const now = new Date();
       let query;
       let params;
 
-      // Получаем временные границы для каждого периода
-      if (period === 'all') {
-        query = 'SELECT * FROM channel_stats ORDER BY timestamp ASC';
-        params = [];
-      } else {
-        // Преобразуем период в количество дней
-        let days;
-        switch(period) {
-          case '24h':
-          case '1d':
-            days = 1;
-            break;
-          case '7d':
-            days = 7;
-            break;
-          case '14d':
-            days = 14;
-            break;
-          case '30d':
-            days = 30;
-            break;
-        }
-
-        // Формируем SQL запрос с точным интервалом
+      if (period === '1d') {
+        // Get all records for current day
         query = `
           SELECT * FROM channel_stats 
-          WHERE date >= date('now', '-' || ? || ' days')
+          WHERE date = date('now')
           ORDER BY timestamp ASC
         `;
+        params = [];
+      } else if (period === 'all') {
+        // Get last record for each day for all time
+        query = `
+          WITH DailyLastRecord AS (
+            SELECT *,
+              ROW_NUMBER() OVER (
+                PARTITION BY date 
+                ORDER BY timestamp DESC
+              ) as rn
+            FROM channel_stats
+          )
+          SELECT 
+            id, date, subscribers, views, reach, timestamp
+          FROM DailyLastRecord 
+          WHERE rn = 1
+          ORDER BY date ASC
+        `;
+        params = [];
+      } else {
+        // For 7d, 14d, 30d - get last record of each day
+        const days = period.replace('d', '');
+        query = `
+          WITH DailyLastRecord AS (
+            SELECT *,
+              ROW_NUMBER() OVER (
+                PARTITION BY date 
+                ORDER BY timestamp DESC
+              ) as rn
+            FROM channel_stats
+            WHERE date >= date('now', '-' || ? || ' days')
+          )
+          SELECT 
+            id, date, subscribers, views, reach, timestamp
+          FROM DailyLastRecord 
+          WHERE rn = 1
+          ORDER BY date ASC
+        `;
         params = [days];
-        console.log(`Fetching data for last ${days} days`);
       }
 
-      console.log('SQL Query:', query);
-      console.log('Params:', params);
       
       rows = await db.all(query, params);
-      console.log('Found rows:', rows.length);
-    } catch (error) {
-      console.error('Database error:', error);
-      throw new Error('Failed to fetch channel history');
-    }
 
-    if (!rows) {
+      if (!rows?.length) {
+        return c.json({
+          success: true,
+          data: {
+            period,
+            summary: {
+              total_subscriber_growth: 0,
+              total_views_growth: 0,
+              average_reach: 0
+            },
+            history: []
+          }
+        });
+      }
+
+      const stats = rows.map((row, index) => {
+        const prevRow = index > 0 ? rows[index - 1] : null;
+        return {
+          ...row,
+          subscribers_growth: prevRow ? row.subscribers - prevRow.subscribers : 0,
+          views_growth: prevRow ? row.views - prevRow.views : 0,
+          reach_growth: prevRow ? Number((row.reach - prevRow.reach).toFixed(2)) : 0
+        };
+      });
+
+      const summary = {
+        total_subscriber_growth: stats.length > 1 ? 
+          stats[stats.length - 1].subscribers - stats[0].subscribers : 0,
+        total_views_growth: stats.length > 1 ? 
+          stats[stats.length - 1].views - stats[0].views : 0,
+        average_reach: Number((stats.reduce((sum, stat) => sum + stat.reach, 0) / stats.length).toFixed(2))
+      };
+
       return c.json({
         success: true,
         data: {
           period,
-          summary: {
-            total_subscriber_growth: 0,
-            total_views_growth: 0,
-            average_reach: 0
-          },
-          history: []
+          summary,
+          history: stats
         }
       });
+
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to fetch channel history');
     }
-
-    // Calculate growth metrics
-    const stats = rows.map((row, index) => {
-      const prevRow = index > 0 ? rows[index - 1] : null;
-      return {
-        ...row,
-        subscribers_growth: prevRow ? row.subscribers - prevRow.subscribers : 0,
-        views_growth: prevRow ? row.views - prevRow.views : 0,
-        reach_growth: prevRow ? (row.reach - prevRow.reach).toFixed(2) : 0
-      };
-    });
-
-    // Calculate summary
-    const summary = {
-      total_subscriber_growth: stats.length > 1 ? 
-        stats[stats.length - 1].subscribers - stats[0].subscribers : 0,
-      total_views_growth: stats.length > 1 ? 
-        stats[stats.length - 1].views - stats[0].views : 0,
-      average_reach: stats.reduce((sum, stat) => sum + stat.reach, 0) / stats.length
-    };
-
-    return c.json({
-      success: true,
-      data: {
-        period,
-        summary,
-        history: stats
-      }
-    });
   } catch (error) {
     return errorHandler(error, c);
   }

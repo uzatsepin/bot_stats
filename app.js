@@ -38,7 +38,7 @@ registerRoutes(app);
 
 function scheduleCronJobs(client, channelUsername) {
     console.log("Инициализация задания сохранения статистики");
-    cron.schedule("0 */6 * * *", async () => {
+    cron.schedule("0 */4 * * *", async () => {
         try {
             console.log("Начало сбора статистики:", new Date().toISOString());
             await saveDailyStats(client, channelUsername);
