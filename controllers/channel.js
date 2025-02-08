@@ -64,7 +64,7 @@ export async function getChannelGrowth(c) {
     const channel = await getChannel(client, username);
     const fullChannel = await getChannelFullInfo(client, channel);
     const messages = await getChannelMessages(client, channel);
-
+        
     const dailyStats = {};
     messages.forEach(msg => {
       const date = new Date(msg.date * 1000).toISOString().slice(0, 10);
@@ -96,7 +96,14 @@ export async function getChannelHistory(c) {
     const period = c.req.query('period') || '7d';
     const db = c.get('db');
 
-    // Validate period
+    const currentSubscribers = await db.get(`
+      SELECT subscribers
+      FROM channel_stats
+      WHERE date = date('now')
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `);
+
     const validPeriods = ['1d', '7d', '14d', '30d', 'all'];
     if (!validPeriods.includes(period)) {
       return c.json({
@@ -113,10 +120,23 @@ export async function getChannelHistory(c) {
       if (period === '1d') {
         // Get all records for current day
         query = `
-          SELECT * FROM channel_stats 
+        WITH PreviousDayLastRecord AS (
+          SELECT *
+          FROM channel_stats
+          WHERE date = date('now', '-1 day')
+          ORDER BY timestamp DESC
+          LIMIT 1
+        ),
+        CurrentDayRecords AS (
+          SELECT *
+          FROM channel_stats
           WHERE date = date('now')
-          ORDER BY timestamp ASC
-        `;
+        )
+        SELECT * FROM PreviousDayLastRecord
+        UNION ALL
+        SELECT * FROM CurrentDayRecords
+        ORDER BY timestamp ASC
+      `;
         params = [];
       } else if (period === 'all') {
         // Get last record for each day for all time
@@ -198,6 +218,7 @@ export async function getChannelHistory(c) {
         success: true,
         data: {
           period,
+          current_subscribers: currentSubscribers?.subscribers || 0,
           summary,
           history: stats
         }
