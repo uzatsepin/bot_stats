@@ -17,18 +17,12 @@ export async function saveDailyStats(client, channelUsername) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000
     
     const allMessages = await client.getMessages(channel, { limit: 100 })
-    
     const dailyMessages = allMessages.filter(msg => msg.date >= startOfDay)
 
-    if (!dailyMessages || dailyMessages.length === 0) {
-      console.log('No messages found in the last 24 hours')
-      return
-    }
-
+    // Calculate stats even if there are no daily messages
     const stats = {
       totalViews: allMessages.reduce((acc, msg) => acc + (msg.views || 0), 0),
       reach: allMessages.length ? allMessages.reduce((acc, msg) => acc + (msg.views || 0), 0) / allMessages.length : 0,
-      
       dailyViews: dailyMessages.reduce((acc, msg) => acc + (msg.views || 0), 0),
       postsCount: dailyMessages.length,
       interactions: dailyMessages.reduce((acc, msg) => {
@@ -49,17 +43,18 @@ export async function saveDailyStats(client, channelUsername) {
       reach: parseFloat(stats.reach.toFixed(2)),
       posts_count: stats.postsCount,
       daily_views: stats.dailyViews,
-      engagement_rate: parseFloat(engagementRate.toFixed(2))
+      engagement_rate: parseFloat(engagementRate.toFixed(2)),
+      timestamp: now.toISOString() // Add timestamp for precise tracking
     }
 
     db = await openDb()
     await db.run(`
-      INSERT OR REPLACE INTO channel_stats (
-        date, subscribers, views, reach, posts_count, daily_views, engagement_rate
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO channel_stats (
+        date, subscribers, views, reach, posts_count, daily_views, engagement_rate, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       data.date, data.subscribers, data.views, data.reach,
-      data.posts_count, data.daily_views, data.engagement_rate
+      data.posts_count, data.daily_views, data.engagement_rate, data.timestamp
     ])
 
     const duration = Date.now() - startTime
